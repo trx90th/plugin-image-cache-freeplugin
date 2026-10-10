@@ -1,0 +1,31 @@
+name: Daily check
+
+on:
+  schedule:
+    - cron: "52 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Refresh build stamp
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          mkdir -p docs
+          echo "last build check: $DATE" > docs/last-check.txt
+
+      - name: Commit and push
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet && echo "Nothing to update" && exit 0
+          git commit -m "build: refresh stamp"
+          git push
